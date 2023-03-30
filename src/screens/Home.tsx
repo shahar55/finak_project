@@ -13,6 +13,7 @@ import {
   Button,
   useColorScheme,
   View,
+  StyleSheet,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -33,10 +34,7 @@ function Home({navigation}: any): JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
+        <View style={styles.Container}>
           <Button
             title="Go to Recording"
             onPress={() => navigation.navigate('Recording')}
@@ -47,4 +45,10 @@ function Home({navigation}: any): JSX.Element {
   );
 }
 
+const styles = StyleSheet.create({
+  Container: {
+    marginTop: 32,
+    paddingHorizontal: 24,
+  },
+});
 export default Home;

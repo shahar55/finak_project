@@ -1,13 +1,13 @@
 import React from 'react';
-import {SafeAreaView, ScrollView, StyleSheet, Text} from 'react-native';
+import {SafeAreaView, View, StyleSheet, Text} from 'react-native';
 
 function Recording(): JSX.Element {
   console.log('hello');
   return (
     <SafeAreaView>
-      <ScrollView style={styles.Container}>
+      <View style={styles.Container}>
         <Text style={styles.Text}>RECORDING SCREEN</Text>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
