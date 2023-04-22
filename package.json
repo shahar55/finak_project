@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@tensorflow/tfjs": "^4.4.0",
+    "@spotify/basic-pitch": "^1.0.1",
     "buffer": "^6.0.3",
     "expo": "^48.0.0",
     "expo-gl": "~12.4.0",

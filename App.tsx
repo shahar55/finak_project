@@ -25,6 +25,13 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+import {
+  addPitchBendsToNoteEvents,
+  BasicPitch,
+  noteFramesToTime,
+  outputToNotesPoly,
+} from '@spotify/basic-pitch';
+
 import * as tf from '@tensorflow/tfjs';
 import {initTF} from './src/utils/tf_platform_react_native';
 import {bundleResourceIO} from './src/utils/tf_bundle_resource_io';
@@ -63,11 +70,37 @@ function Section({children, title}: SectionProps): JSX.Element {
 
 function App(): JSX.Element {
   initTF().then(() => {
+    console.log(tf.getBackend());
     let a = tf.zeros([2]);
     let b = tf.zeros([3]);
     console.log(a.concat(b));
-    tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)).then(model => {
-      //todo
+    let bp = new BasicPitch(
+      tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)),
+    );
+    const input = new Float32Array(2048);
+    const frames: number[][] = [];
+    const onsets: number[][] = [];
+    const contours: number[][] = [];
+    let pct: number = 0;
+    bp.evaluateModel(
+      input,
+      (f: number[][], o: number[][], c: number[][]) => {
+        frames.push(...f);
+        onsets.push(...o);
+        contours.push(...c);
+      },
+      (p: number) => {
+        pct = p;
+        console.log(pct);
+      },
+    ).then(() => {
+      let notes = noteFramesToTime(
+        addPitchBendsToNoteEvents(
+          contours,
+          outputToNotesPoly(frames, onsets, 0.5, 0.5, 5),
+        ),
+      );
+      console.log(notes);
     });
   });
   const isDarkMode = useColorScheme() === 'dark';
