@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, {useEffect} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -35,8 +35,10 @@ import {
 import * as tf from '@tensorflow/tfjs';
 import {initTF} from './src/utils/tf_platform_react_native';
 import {bundleResourceIO} from './src/utils/tf_bundle_resource_io';
-const modelJson = require('./resources/basic-pitch/model/model.json');
-const modelWeights = require('./resources/basic-pitch/model/group1-shard1of1.bin');
+const modelJson = require('./basic-pitch/model/model.json');
+const modelWeights = require('./basic-pitch/model/group1-shard1of1.bin');
+
+import {RealTimeRecorder} from './src/components';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -69,40 +71,73 @@ function Section({children, title}: SectionProps): JSX.Element {
 }
 
 function App(): JSX.Element {
-  initTF().then(() => {
-    console.log(tf.getBackend());
-    let a = tf.zeros([2]);
-    let b = tf.zeros([3]);
-    console.log(a.concat(b));
-    let bp = new BasicPitch(
-      tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)),
-    );
-    const input = new Float32Array(2048);
-    const frames: number[][] = [];
-    const onsets: number[][] = [];
-    const contours: number[][] = [];
-    let pct: number = 0;
-    bp.evaluateModel(
-      input,
-      (f: number[][], o: number[][], c: number[][]) => {
-        frames.push(...f);
-        onsets.push(...o);
-        contours.push(...c);
-      },
-      (p: number) => {
-        pct = p;
-        console.log(pct);
-      },
-    ).then(() => {
-      let notes = noteFramesToTime(
-        addPitchBendsToNoteEvents(
-          contours,
-          outputToNotesPoly(frames, onsets, 0.5, 0.5, 5),
-        ),
+  useEffect(() => {
+    initTF().then(() => {
+      console.log(tf.getBackend());
+      let aa = tf.zeros([2]);
+      let bb = tf.zeros([3]);
+      console.log(aa.concat(bb));
+      let cc = tf.zeros([10, 2]);
+      let dd = tf.zeros([10, 2]);
+      tf.print(dd.add(tf.add(cc, 2)).mul(tf.add(cc, 3)));
+      let bp = new BasicPitch(
+        tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)),
       );
-      console.log(notes);
+      const input = new Float32Array(2048);
+      const frames: number[][] = [];
+      const onsets: number[][] = [];
+      const contours: number[][] = [];
+      let pct: number = 0;
+      //todo: the first evaluateModel takes long time because the model needs to get loaded
+      bp.evaluateModel(
+        input,
+        (f: number[][], o: number[][], c: number[][]) => {
+          frames.push(...f);
+          onsets.push(...o);
+          contours.push(...c);
+        },
+        (p: number) => {
+          pct = p;
+          console.log(pct);
+        },
+      ).then(() => {
+        let notes = noteFramesToTime(
+          addPitchBendsToNoteEvents(
+            contours,
+            outputToNotesPoly(frames, onsets, 0.5, 0.5, 5),
+          ),
+        );
+        console.log(notes);
+
+        const input1 = new Float32Array(4096);
+        const frames1: number[][] = [];
+        const onsets1: number[][] = [];
+        const contours1: number[][] = [];
+        let pct1: number = 0;
+        bp.evaluateModel(
+          input1,
+          (f: number[][], o: number[][], c: number[][]) => {
+            frames1.push(...f);
+            onsets1.push(...o);
+            contours1.push(...c);
+          },
+          (p: number) => {
+            pct1 = p;
+            console.log(pct1);
+          },
+        ).then(() => {
+          let notes1 = noteFramesToTime(
+            addPitchBendsToNoteEvents(
+              contours1,
+              outputToNotesPoly(frames1, onsets1, 0.5, 0.5, 5),
+            ),
+          );
+          console.log(notes1);
+        });
+      });
     });
-  });
+  }, []);
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -115,6 +150,7 @@ function App(): JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
+      <RealTimeRecorder handleDta={() => {}} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
