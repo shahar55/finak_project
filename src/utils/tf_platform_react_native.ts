@@ -153,7 +153,7 @@ export class PlatformReactNative implements Platform {
     if (encoding === 'utf-16') {
       encoding = 'utf16le';
     }
-    return new Uint8Array(Buffer.from(text, encoding));
+    return new Uint8Array(Buffer.from(text, encoding as BufferEncoding));
   }
   /** Decode the provided bytes into a string using the provided encoding. */
   decode(bytes: Uint8Array, encoding: string): string {
@@ -161,7 +161,7 @@ export class PlatformReactNative implements Platform {
     if (encoding === 'utf-16') {
       encoding = 'utf16le';
     }
-    return Buffer.from(bytes).toString(encoding);
+    return Buffer.from(bytes).toString(encoding as BufferEncoding);
   }
 
   now(): number {
@@ -247,15 +247,17 @@ function registerWebGLBackend() {
         const shimFenceSync = () => {
           return {};
         };
-        // @ts-ignore
+
         const shimClientWaitSync = () => glContext.CONDITION_SATISFIED;
 
-        // @ts-ignore
         glContext.getExtension = shimGetExt.bind(glContext);
-        // @ts-ignore
         glContext.fenceSync = shimFenceSync.bind(glContext);
-        // @ts-ignore
         glContext.clientWaitSync = shimClientWaitSync.bind(glContext);
+
+        // I added this one:
+        const shimTexStorage2D = () => {};
+        glContext.texStorage2D = shimTexStorage2D.bind(glContext);
+        // =================================================================
 
         // Set the WebGLContext before flag evaluation
         setWebGLContext(2, glContext);
@@ -285,11 +287,11 @@ function registerWebGLBackend() {
 export async function initTF() {
   tf.env().registerFlag('IS_REACT_NATIVE', () => true);
 
-  await tf.ready();
-
   if (tf.env().getBool('IS_REACT_NATIVE')) {
     setupGlobals();
     registerWebGLBackend();
     tf.setPlatform('react-native', new PlatformReactNative());
   }
+
+  await tf.ready();
 }
