@@ -254,13 +254,23 @@ function registerWebGLBackend() {
         glContext.fenceSync = shimFenceSync.bind(glContext);
         glContext.clientWaitSync = shimClientWaitSync.bind(glContext);
 
-        // I added this one:
-        const shimTexStorage2D = () => {};
-        glContext.texStorage2D = shimTexStorage2D.bind(glContext);
-        // =================================================================
+        /*
+        // for some reason webgl2 methods are undefined so use webgl1 setWebGLContext(1, glContext); instead of setWebGLContext(2, glContext);
+        console.log(glContext.texImage2D);
+        console.log(glContext.compileShader);
+        console.log(glContext.activeTexture);
+        console.log(glContext.getFramebufferAttachmentParameter);
+        console.log(glContext.isFramebuffer);
+        // webgl2
+        console.log(glContext.getFragDataLocation);
+        console.log(glContext.texStorage2D);
+        console.log(glContext.texStorage3D);
+        console.log(glContext.readBuffer);
+        console.log(glContext.framebufferTextureLayer);
+         */
 
         // Set the WebGLContext before flag evaluation
-        setWebGLContext(2, glContext);
+        setWebGLContext(1, glContext);
         const context = new GPGPUContext();
         return new MathBackendWebGL(context);
       },
@@ -294,4 +304,5 @@ export async function initTF() {
   }
 
   await tf.ready();
+  console.log(tf.getBackend());
 }
