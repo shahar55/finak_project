@@ -240,20 +240,21 @@ function registerWebGLBackend() {
         // implementations of gl.fenceSync and gl.clientWaitSync
         // TODO remove once fenceSync and clientWaitSync is implemented upstream.
         //
-        /*
+
         const shimFenceSync = () => {
           return {};
         };
         const shimClientWaitSync = () => glContext.CONDITION_SATISFIED;
         glContext.fenceSync = shimFenceSync.bind(glContext);
         glContext.clientWaitSync = shimClientWaitSync.bind(glContext);
-         */
-
         glContext.getExtension = shimGetExt.bind(glContext);
+
+        /*
         // @ts-ignore
         glContext.fenceSync = null;
         // @ts-ignore
         glContext.clientWaitSync = null;
+         */
 
         // Set the WebGLContext before flag evaluation
         setWebGLContext(2, glContext);

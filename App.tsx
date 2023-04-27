@@ -41,6 +41,7 @@ const modelWeights = require('@spotify/basic-pitch/model/group1-shard1of1.bin');
 const audioChannelDataJson = require('./src/components/audiochanneldata.json');
 
 import {RecordingDataAnalyser} from './src/components';
+import {NoteEvent} from '@spotify/basic-pitch/types/toMidi';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -75,20 +76,8 @@ function Section({children, title}: SectionProps): JSX.Element {
 function App(): JSX.Element {
   const basicPitch = React.useRef<BasicPitch>();
   const [basicPitchReady, setBasicPitchReady] = useState<boolean>(false);
-  /*
-  useEffect(() => {
-    initTF().then(() => {
-      let a = tf.zeros([2]);
-      let b = tf.zeros([2]);
-      tf.print(a.concat(b));
-      tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)).then(
-        model => {
-          console.log(model);
-        },
-      );
-    });
-  }, []);
-   */
+
+  const [currentNotes, setCurrentNotes] = React.useState<NoteEvent[]>([]);
 
   useEffect(() => {
     initTF().then(() => {
@@ -137,7 +126,7 @@ function App(): JSX.Element {
         );
         console.log(notes);
 
-        const input1 = new Float32Array(4096);
+        const input1 = new Float32Array(16384);
         const frames1: number[][] = [];
         const onsets1: number[][] = [];
         const contours1: number[][] = [];
@@ -184,7 +173,11 @@ function App(): JSX.Element {
       <RecordingDataAnalyser
         basicPitch={basicPitch.current}
         basicPitchReady={basicPitchReady}
+        setCurrentNotes={setCurrentNotes}
       />
+      <Text style={{fontSize: 28, marginVertical: 12}}>
+        {JSON.stringify(currentNotes)}
+      </Text>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
