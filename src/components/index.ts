@@ -1,3 +1,4 @@
 import RealTimeRecorder from './RealTimeRecorder';
+import RecordingDataAnalyser from './RecordingDataAnalyser';
 
-export {RealTimeRecorder};
+export {RealTimeRecorder, RecordingDataAnalyser};

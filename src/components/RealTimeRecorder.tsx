@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  SafeAreaView,
   View,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import {Buffer} from 'buffer';
 
 type RealTimeRecorderProps = {
   handleDta: (data: Float32Array) => void;
+  isReadyToStart: boolean;
 };
 
 const requestRecordingPermission = async () => {
@@ -43,6 +43,7 @@ const requestRecordingPermission = async () => {
 function RealTimeRecorder(properties: RealTimeRecorderProps): JSX.Element {
   const isAndroid = Platform.OS === 'android'; //ios and android have different path to the app assets folder
   const webViewRef = React.useRef<WebView>(null);
+  const [webViewReady, setWebViewReady] = React.useState<boolean>(false);
 
   async function triggerStartEvent() {
     const granted = await requestRecordingPermission();
@@ -66,28 +67,30 @@ function RealTimeRecorder(properties: RealTimeRecorderProps): JSX.Element {
     } else if (msg.eventType === 'data-available') {
       let data = new Float32Array(Buffer.from(msg.data, 'base64').buffer); //decode from base64
       console.log('RT Recorder data: ' + data[0] + ', ' + data[1] + ',...');
-      properties.handleDta(data as Float32Array);
+      properties.handleDta(data);
     }
   }
 
   return (
-    <SafeAreaView>
+    <View>
       <View style={styles.Container}>
-        <Text style={styles.Text}>RECORDING SCREEN</Text>
-      </View>
-      <View style={styles.Container}>
-        <Button title="Start WebView" onPress={triggerStartEvent} />
+        <Button
+          title="Start WebView"
+          onPress={triggerStartEvent}
+          disabled={!(webViewReady && properties.isReadyToStart)}
+        />
       </View>
       <View style={styles.Container}>
         <Button title="Stop WebView" onPress={triggerStopEvent} />
       </View>
-      <View style={{height: 100}}>
+      <View style={{height: 50}}>
         <Text>webview</Text>
         {isAndroid ? (
           <WebView
             ref={webViewRef}
             source={{uri: 'file:///android_asset/html/foo.html'}}
             onMessage={event => onWebViewMsg(event)}
+            onLoad={() => setWebViewReady(true)}
           />
         ) : (
           <WebView
@@ -96,16 +99,17 @@ function RealTimeRecorder(properties: RealTimeRecorderProps): JSX.Element {
             source={require('../../resources/html/foo.html')}
             onMessage={event => onWebViewMsg(event)}
             mediaCapturePermissionGrantType="grantIfSameHostElsePrompt"
+            onLoad={() => setWebViewReady(true)}
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   Container: {
-    marginTop: 32,
+    marginTop: 12,
     paddingHorizontal: 24,
   },
   Text: {

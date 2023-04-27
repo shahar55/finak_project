@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -35,10 +35,12 @@ import {
 import * as tf from '@tensorflow/tfjs';
 import {initTF} from './src/utils/tf_platform_react_native';
 import {bundleResourceIO} from './src/utils/tf_bundle_resource_io';
-const modelJson = require('./basic-pitch/model/model.json');
-const modelWeights = require('./basic-pitch/model/group1-shard1of1.bin');
+const modelJson = require('@spotify/basic-pitch/model/model.json');
+const modelWeights = require('@spotify/basic-pitch/model/group1-shard1of1.bin');
 
-import {RealTimeRecorder} from './src/components';
+const audioChannelDataJson = require('./src/components/audiochanneldata.json');
+
+import {RecordingDataAnalyser} from './src/components';
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -71,19 +73,45 @@ function Section({children, title}: SectionProps): JSX.Element {
 }
 
 function App(): JSX.Element {
+  const basicPitch = React.useRef<BasicPitch>();
+  const [basicPitchReady, setBasicPitchReady] = useState<boolean>(false);
+  /*
   useEffect(() => {
     initTF().then(() => {
-      console.log(tf.getBackend());
-      let aa = tf.zeros([2]);
-      let bb = tf.zeros([3]);
-      console.log(aa.concat(bb));
-      let cc = tf.zeros([10, 2]);
-      let dd = tf.zeros([10, 2]);
-      tf.print(dd.add(tf.add(cc, 2)).mul(tf.add(cc, 3)));
+      let a = tf.zeros([2]);
+      let b = tf.zeros([2]);
+      tf.print(a.concat(b));
+      tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)).then(
+        model => {
+          console.log(model);
+        },
+      );
+    });
+  }, []);
+   */
+
+  useEffect(() => {
+    initTF().then(() => {
       let bp = new BasicPitch(
         tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights)),
       );
-      const input = new Float32Array(2048);
+
+      const input = new Float32Array(Object.values(audioChannelDataJson.data));
+      console.log(
+        'input: ' +
+          input.length +
+          ': ' +
+          input[0] +
+          ', ' +
+          input[1] +
+          ', ' +
+          input[2],
+      );
+      let inputTensor = tf.tensor(input);
+      tf.print(inputTensor);
+      console.log('inputTensor.sum: ');
+      tf.print(tf.sum(inputTensor));
+
       const frames: number[][] = [];
       const onsets: number[][] = [];
       const contours: number[][] = [];
@@ -104,7 +132,7 @@ function App(): JSX.Element {
         let notes = noteFramesToTime(
           addPitchBendsToNoteEvents(
             contours,
-            outputToNotesPoly(frames, onsets, 0.5, 0.5, 5),
+            outputToNotesPoly(frames, onsets, 0.55, 0.5, 5),
           ),
         );
         console.log(notes);
@@ -129,10 +157,13 @@ function App(): JSX.Element {
           let notes1 = noteFramesToTime(
             addPitchBendsToNoteEvents(
               contours1,
-              outputToNotesPoly(frames1, onsets1, 0.5, 0.5, 5),
+              outputToNotesPoly(frames1, onsets1, 0.55, 0.5, 5),
             ),
           );
           console.log(notes1);
+
+          basicPitch.current = bp;
+          setBasicPitchReady(true);
         });
       });
     });
@@ -150,7 +181,10 @@ function App(): JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <RealTimeRecorder handleDta={() => {}} />
+      <RecordingDataAnalyser
+        basicPitch={basicPitch.current}
+        basicPitchReady={basicPitchReady}
+      />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
