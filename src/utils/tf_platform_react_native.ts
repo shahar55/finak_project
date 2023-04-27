@@ -200,10 +200,8 @@ function registerWebGLBackend() {
       'rn-webgl',
       async () => {
         const glContext = await GLView.createContextAsync();
-
         // ExpoGl getBufferSubData is not implemented yet (throws an exception).
         tf.env().set('WEBGL_BUFFER_SUPPORTED', false);
-
         //
         // Mock extension support for EXT_color_buffer_float and
         // EXT_color_buffer_half_float on the expo-gl context object.
@@ -230,13 +228,11 @@ function registerWebGLBackend() {
               return {};
             }
           }
-
           if (name === 'EXT_color_buffer_half_float') {
             return {};
           }
           return getExt(name);
         };
-
         //
         // Manually make 'read' synchronous. glContext has a defined gl.fenceSync
         // function that throws a "Not implemented yet" exception so core
@@ -244,39 +240,28 @@ function registerWebGLBackend() {
         // implementations of gl.fenceSync and gl.clientWaitSync
         // TODO remove once fenceSync and clientWaitSync is implemented upstream.
         //
+        /*
         const shimFenceSync = () => {
           return {};
         };
-
         const shimClientWaitSync = () => glContext.CONDITION_SATISFIED;
-
-        glContext.getExtension = shimGetExt.bind(glContext);
         glContext.fenceSync = shimFenceSync.bind(glContext);
         glContext.clientWaitSync = shimClientWaitSync.bind(glContext);
-
-        /*
-        // for some reason webgl2 methods are undefined so use webgl1 setWebGLContext(1, glContext); instead of setWebGLContext(2, glContext);
-        console.log(glContext.texImage2D);
-        console.log(glContext.compileShader);
-        console.log(glContext.activeTexture);
-        console.log(glContext.getFramebufferAttachmentParameter);
-        console.log(glContext.isFramebuffer);
-        // webgl2
-        console.log(glContext.getFragDataLocation);
-        console.log(glContext.texStorage2D);
-        console.log(glContext.texStorage3D);
-        console.log(glContext.readBuffer);
-        console.log(glContext.framebufferTextureLayer);
          */
 
+        glContext.getExtension = shimGetExt.bind(glContext);
+        // @ts-ignore
+        glContext.fenceSync = null;
+        // @ts-ignore
+        glContext.clientWaitSync = null;
+
         // Set the WebGLContext before flag evaluation
-        setWebGLContext(1, glContext);
+        setWebGLContext(2, glContext);
         const context = new GPGPUContext();
         return new MathBackendWebGL(context);
       },
       PRIORITY,
     );
-
     // Register all the webgl kernels on the rn-webgl backend
     // TO DO: Use tf.copyRegisteredKernels once synced to tfjs-core 2.5.0.
     tf.copyRegisteredKernels('webgl', 'rn-webgl');
@@ -305,4 +290,5 @@ export async function initTF() {
 
   await tf.ready();
   console.log(tf.getBackend());
+  console.log(tf.env().getBool('WEBGL_FENCE_API_ENABLED'));
 }
